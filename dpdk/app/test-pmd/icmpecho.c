@@ -297,6 +297,10 @@ ipv4_hdr_cksum(struct ipv4_hdr *ip_h)
 #define is_multicast_ipv4_addr(ipv4_addr) \
 	(((rte_be_to_cpu_32((ipv4_addr)) >> 24) & 0x000000FF) == 0xE0)
 
+
+static struct ether_addr broadcast_ether_dst =
+	{{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }};
+
 /*
  * Receive a burst of packets, lookup for ICMP echo requests, and, if any,
  * send back ICMP echo replies.
@@ -501,7 +505,7 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 		}
 
 		/*
-		 * Prepare ICMPor UDP echo reply to be sent back.
+		 * Prepare ICMP or UDP echo reply to be sent back.
 		 * - switch ethernet source and destinations addresses,
 		 * - use the request IP source address as the reply IP
 		 *    destination address,
@@ -523,6 +527,11 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 		ether_addr_copy(&eth_h->s_addr, &eth_addr);
 		ether_addr_copy(&eth_h->d_addr, &eth_h->s_addr);
 		ether_addr_copy(&eth_addr, &eth_h->d_addr);
+
+		if (proto == IPPROTO_UDP) {
+			ether_addr_copy(&broadcast_ether_dst, &eth_h->d_addr);
+		}
+
 		ip_addr = ip_h->src_addr;
 		if (is_multicast_ipv4_addr(ip_h->dst_addr)) {
 			uint32_t ip_src;
@@ -539,6 +548,11 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 			ip_h->src_addr = ip_h->dst_addr;
 			ip_h->dst_addr = ip_addr;
 		}
+
+		if (proto == IPPROTO_UDP) {
+			ip_h->dst_addr	= rte_cpu_to_be_32(IPv4(255, 255, 255, 255));
+		}
+
 		if (proto == IPPROTO_ICMP) {
 			icmp_h->icmp_type = IP_ICMP_ECHO_REPLY;
 			cksum = ~icmp_h->icmp_cksum & 0xffff;
