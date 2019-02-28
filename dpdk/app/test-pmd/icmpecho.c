@@ -60,6 +60,7 @@
 #include <rte_arp.h>
 #include <rte_ip.h>
 #include <rte_icmp.h>
+#include <rte_udp.h>
 #include <rte_string_fns.h>
 #include <rte_flow.h>
 
@@ -301,7 +302,8 @@ ipv4_hdr_cksum(struct ipv4_hdr *ip_h)
  * send back ICMP echo replies.
  */
 static void
-reply_to_icmp_echo_rqsts(struct fwd_stream *fs)
+// reply_to_icmp_echo_rqsts(struct fwd_stream *fs)
+reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 {
 	struct rte_mbuf *pkts_burst[MAX_PKT_BURST];
 	struct rte_mbuf *pkt;
@@ -310,6 +312,7 @@ reply_to_icmp_echo_rqsts(struct fwd_stream *fs)
 	struct arp_hdr  *arp_h;
 	struct ipv4_hdr *ip_h;
 	struct icmp_hdr *icmp_h;
+	struct udp_hdr *udp_h;
 	struct ether_addr eth_addr;
 	uint32_t retry;
 	uint32_t ip_addr;
@@ -320,6 +323,7 @@ reply_to_icmp_echo_rqsts(struct fwd_stream *fs)
 	uint16_t vlan_id;
 	uint16_t arp_op;
 	uint16_t arp_pro;
+	uint16_t udp_port;
 	uint32_t cksum;
 	uint8_t  i;
 	int l2_len;
@@ -455,21 +459,49 @@ reply_to_icmp_echo_rqsts(struct fwd_stream *fs)
 		/*
 		 * Check if packet is a ICMP echo request.
 		 */
-		icmp_h = (struct icmp_hdr *) ((char *)ip_h +
-					      sizeof(struct ipv4_hdr));
-		if (! ((ip_h->next_proto_id == IPPROTO_ICMP) &&
-		       (icmp_h->icmp_type == IP_ICMP_ECHO_REQUEST) &&
-		       (icmp_h->icmp_code == 0))) {
-			rte_pktmbuf_free(pkt);
-			continue;
+		// icmp_h = (struct icmp_hdr *) ((char *)ip_h +
+		// 			      sizeof(struct ipv4_hdr));
+		// if (! ((ip_h->next_proto_id == IPPROTO_ICMP) &&
+		//        (icmp_h->icmp_type == IP_ICMP_ECHO_REQUEST) &&
+		//        (icmp_h->icmp_code == 0))) {
+		// 	rte_pktmbuf_free(pkt);
+		// 	continue;
+		// }
+
+		if (proto == IPPROTO_ICMP) {
+			/*
+			 * Check if packet is a ICMP echo request.
+			 */
+			icmp_h = (struct icmp_hdr *) ((char *)ip_h +
+						      sizeof(struct ipv4_hdr));
+			if (! ((ip_h->next_proto_id == IPPROTO_ICMP) &&
+			       (icmp_h->icmp_type == IP_ICMP_ECHO_REQUEST) &&
+			       (icmp_h->icmp_code == 0))) {
+				rte_pktmbuf_free(pkt);
+				continue;
+			}
+		} else if (proto == IPPROTO_UDP) {
+			udp_h = (struct udp_hdr *) ((char *)ip_h +
+						      sizeof(struct ipv4_hdr));
+			if ((ip_h->next_proto_id != IPPROTO_UDP) &&
+			       (rte_be_to_cpu_16(udp_h->dst_port) != 7)) {
+				rte_pktmbuf_free(pkt);
+				continue;
+			}
 		}
 
-		if (verbose_level > 0)
-			printf("  ICMP: echo request seq id=%d\n",
-			       rte_be_to_cpu_16(icmp_h->icmp_seq_nb));
+		if (proto == IPPROTO_ICMP) {
+			if (verbose_level > 0)
+				printf("  ICMP: echo request seq id=%d\n",
+				       rte_be_to_cpu_16(icmp_h->icmp_seq_nb));
+		} else if (proto == IPPROTO_UDP) {
+			if (verbose_level > 0)
+				printf("  UDP: echo request from port=%d\n",
+				       rte_be_to_cpu_16(udp_h->src_port));
+		}
 
 		/*
-		 * Prepare ICMP echo reply to be sent back.
+		 * Prepare ICMPor UDP echo reply to be sent back.
 		 * - switch ethernet source and destinations addresses,
 		 * - use the request IP source address as the reply IP
 		 *    destination address,
@@ -483,6 +515,8 @@ reply_to_icmp_echo_rqsts(struct fwd_stream *fs)
 		 *       addresses in the reply IP header,
 		 *     - keep the IP header checksum unchanged.
 		 * - set IP_ICMP_ECHO_REPLY in ICMP header.
+		 * - switch the UDP source and destination ports in the UDP
+		 *   header.
 		 * ICMP checksum is computed by assuming it is valid in the
 		 * echo request and not verified.
 		 */
@@ -505,13 +539,19 @@ reply_to_icmp_echo_rqsts(struct fwd_stream *fs)
 			ip_h->src_addr = ip_h->dst_addr;
 			ip_h->dst_addr = ip_addr;
 		}
-		icmp_h->icmp_type = IP_ICMP_ECHO_REPLY;
-		cksum = ~icmp_h->icmp_cksum & 0xffff;
-		cksum += ~htons(IP_ICMP_ECHO_REQUEST << 8) & 0xffff;
-		cksum += htons(IP_ICMP_ECHO_REPLY << 8);
-		cksum = (cksum & 0xffff) + (cksum >> 16);
-		cksum = (cksum & 0xffff) + (cksum >> 16);
-		icmp_h->icmp_cksum = ~cksum;
+		if (proto == IPPROTO_ICMP) {
+			icmp_h->icmp_type = IP_ICMP_ECHO_REPLY;
+			cksum = ~icmp_h->icmp_cksum & 0xffff;
+			cksum += ~htons(IP_ICMP_ECHO_REQUEST << 8) & 0xffff;
+			cksum += htons(IP_ICMP_ECHO_REPLY << 8);
+			cksum = (cksum & 0xffff) + (cksum >> 16);
+			cksum = (cksum & 0xffff) + (cksum >> 16);
+			icmp_h->icmp_cksum = ~cksum;
+		} else if (proto == IPPROTO_UDP) {
+			udp_port = udp_h->src_port;
+			udp_h->src_port = udp_h->dst_port;
+			udp_h->dst_port = udp_port;
+		}
 		pkts_burst[nb_replies++] = pkt;
 	}
 
@@ -552,9 +592,28 @@ reply_to_icmp_echo_rqsts(struct fwd_stream *fs)
 #endif
 }
 
+static void
+reply_to_icmp_echo_rqsts(struct fwd_stream *fs)
+{
+	reply_to_echo_rqsts(fs, IPPROTO_ICMP);
+}
+
+static void
+reply_to_udp_echo_rqsts(struct fwd_stream *fs)
+{
+	reply_to_echo_rqsts(fs, IPPROTO_UDP);
+}
+
 struct fwd_engine icmp_echo_engine = {
 	.fwd_mode_name  = "icmpecho",
 	.port_fwd_begin = NULL,
 	.port_fwd_end   = NULL,
 	.packet_fwd     = reply_to_icmp_echo_rqsts,
+};
+
+struct fwd_engine udp_echo_engine = {
+	.fwd_mode_name  = "udpecho",
+	.port_fwd_begin = NULL,
+	.port_fwd_end   = NULL,
+	.packet_fwd     = reply_to_udp_echo_rqsts,
 };

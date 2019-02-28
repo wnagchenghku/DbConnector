@@ -348,6 +348,7 @@ The commandline options are:
        txonly
        csum
        icmpecho
+       udpecho
        ieee1588
 
 *   ``--rss-ip``

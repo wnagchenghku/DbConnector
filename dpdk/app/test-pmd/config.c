@@ -2064,7 +2064,8 @@ dcb_fwd_config_setup(void)
 }
 
 static void
-icmp_echo_config_setup(void)
+// icmp_echo_config_setup(void)
+echo_config_setup(void)
 {
 	portid_t  rxp;
 	queueid_t rxq;
@@ -2123,8 +2124,10 @@ void
 fwd_config_setup(void)
 {
 	cur_fwd_config.fwd_eng = cur_fwd_eng;
-	if (strcmp(cur_fwd_eng->fwd_mode_name, "icmpecho") == 0) {
-		icmp_echo_config_setup();
+	// if (strcmp(cur_fwd_eng->fwd_mode_name, "icmpecho") == 0) {
+	// 	icmp_echo_config_setup();
+	if (strcmp(cur_fwd_eng->fwd_mode_name, "icmpecho") == 0 || strcmp(cur_fwd_eng->fwd_mode_name, "udpecho") == 0) {
+		echo_config_setup();
 		return;
 	}
 	if ((nb_rxq > 1) && (nb_txq > 1)){

@@ -316,7 +316,7 @@ set fwd
 Set the packet forwarding mode::
 
    testpmd> set fwd (io|mac|macswap|flowgen| \
-                     rxonly|txonly|csum|icmpecho) (""|retry)
+                     rxonly|txonly|csum|icmpecho|udpecho) (""|retry)
 
 ``retry`` can be specified for forwarding engines except ``rx_only``.
 
@@ -344,6 +344,8 @@ The available information categories are:
 * ``csum``: Changes the checksum field with hardware or software methods depending on the offload flags on the packet.
 
 * ``icmpecho``: Receives a burst of packets, lookup for IMCP echo requests and, if any, send back ICMP echo replies.
+
+* ``udpecho``: Receives a burst of packets, lookup for UDP echo requests and, if any, send back UDP echo replies.
 
 * ``ieee1588``: Demonstrate L2 IEEE1588 V2 PTP timestamping for RX and TX. Requires ``CONFIG_RTE_LIBRTE_IEEE1588=y``.
 
