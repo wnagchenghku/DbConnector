@@ -297,10 +297,11 @@ ipv4_hdr_cksum(struct ipv4_hdr *ip_h)
 #define is_multicast_ipv4_addr(ipv4_addr) \
 	(((rte_be_to_cpu_32((ipv4_addr)) >> 24) & 0x000000FF) == 0xE0)
 
-static uint32_t broadcast_ip_dst = IPv4(255, 255, 255, 255);
+static uint32_t broadcast_ip_dst = IPv4(192, 168, 56, 255);
 static struct ether_addr broadcast_ether_dst =
 	{{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }};
 static uint16_t broadcast_udp_dst = 6000;
+static uint32_t counter;
 
 /*
  * Receive a burst of packets, lookup for ICMP echo requests, and, if any,
@@ -332,6 +333,7 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 	uint32_t cksum;
 	uint8_t  i;
 	int l2_len;
+	uint32_t *seq_num;
 #ifdef RTE_TEST_PMD_RECORD_CORE_CYCLES
 	uint64_t start_tsc;
 	uint64_t end_tsc;
@@ -552,6 +554,7 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 
 		if (proto == IPPROTO_UDP) {
 			ip_h->dst_addr	= rte_cpu_to_be_32(broadcast_ip_dst);
+			ip_h->total_length += RTE_BE_TO_CPU_16(sizeof(uint32_t));
 		}
 
 		if (proto == IPPROTO_ICMP) {
@@ -567,6 +570,13 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 			udp_h->src_port = udp_h->dst_port;
 			udp_h->dst_port = udp_port;
 			udp_h->dst_port = rte_cpu_to_be_16(broadcast_udp_dst);
+			udp_h->dgram_len += RTE_BE_TO_CPU_16(sizoef(uint32_t));
+
+			seq_num = (uint32_t *)rte_pktmbuf_append(pkt, sizeof(uint32_t));
+			if (seq_num == NULL) {
+				// Cannot append sequence number
+			}
+			*seq_num = counter++;
 		}
 		pkts_burst[nb_replies++] = pkt;
 	}
