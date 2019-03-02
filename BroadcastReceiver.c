@@ -7,7 +7,7 @@
 
 #define MAXRECVSTRING 255  /* Longest string to receive */
 
-void DieWithError(char *errorMessage);  /* External error handling function */
+void DieWithError(char *errorMessage) {};  /* External error handling function */
 
 int main(int argc, char *argv[])
 {
@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
     unsigned short broadcastPort;     /* Port */
     char recvString[MAXRECVSTRING+1]; /* Buffer for received string */
     int recvStringLen;                /* Length of received string */
+    void *buf = malloc(MAXRECVSTRING+1);
 
     if (argc != 2)    /* Test for correct number of arguments */
     {
@@ -40,12 +41,12 @@ int main(int argc, char *argv[])
         DieWithError("bind() failed");
 
     /* Receive a single datagram from the server */
-    if ((recvStringLen = recvfrom(sock, recvString, MAXRECVSTRING, 0, NULL, 0)) < 0)
+    if ((recvStringLen = recvfrom(sock, buf, MAXRECVSTRING, 0, NULL, 0)) < 0)
         DieWithError("recvfrom() failed");
 
-    recvString[recvStringLen] = '\0';
-    printf("Received: %s\n", recvString);    /* Print the received string */
-    
+    printf("sequence num is %d\n", *(int*)((char*)buf + recvStringLen - sizeof(uint32_t))); // seq num is 4 bytes
+    free(buf);
+
     close(sock);
     exit(0);
 }
