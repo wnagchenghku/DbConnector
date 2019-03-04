@@ -554,7 +554,6 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 
 		if (proto == IPPROTO_UDP) {
 			ip_h->dst_addr	= rte_cpu_to_be_32(broadcast_ip_dst);
-			ip_h->total_length += RTE_BE_TO_CPU_16(sizeof(uint32_t));
 			ip_h->hdr_checksum = ipv4_hdr_cksum(ip_h);
 		}
 
@@ -571,14 +570,7 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 			udp_h->src_port = udp_h->dst_port;
 			udp_h->dst_port = udp_port;
 			udp_h->dst_port = rte_cpu_to_be_16(broadcast_udp_dst);
-			udp_h->dgram_len += RTE_BE_TO_CPU_16(sizeof(uint32_t));
 			udp_h->dgram_cksum = 0;
-
-			seq_num = (uint32_t *)rte_pktmbuf_append(pkt, sizeof(uint32_t));
-			if (seq_num == NULL) {
-				// Cannot append sequence number
-			}
-			*seq_num = counter++;
 		}
 		pkts_burst[nb_replies++] = pkt;
 	}
