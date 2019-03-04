@@ -61,6 +61,7 @@
 #include <rte_ip.h>
 #include <rte_icmp.h>
 #include <rte_udp.h>
+#include <rte_ip_frag.h>
 #include <rte_string_fns.h>
 #include <rte_flow.h>
 
@@ -571,6 +572,10 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 			udp_h->dst_port = udp_port;
 			udp_h->dst_port = rte_cpu_to_be_16(broadcast_udp_dst);
 			udp_h->dgram_cksum = 0;
+
+			if (rte_ipv4_frag_pkt_is_fragmented(ip_h)) {
+				/* code */
+			}
 		}
 		pkts_burst[nb_replies++] = pkt;
 	}
