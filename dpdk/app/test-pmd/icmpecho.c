@@ -334,7 +334,6 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 	uint32_t cksum;
 	uint8_t  i;
 	int l2_len;
-	uint32_t *seq_num;
 #ifdef RTE_TEST_PMD_RECORD_CORE_CYCLES
 	uint64_t start_tsc;
 	uint64_t end_tsc;
@@ -576,6 +575,7 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 			if (rte_ipv4_frag_pkt_is_fragmented(ip_h)) {
 				/* code */
 			}
+			counter++;
 		}
 		pkts_burst[nb_replies++] = pkt;
 	}
