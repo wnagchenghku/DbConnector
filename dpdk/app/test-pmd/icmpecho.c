@@ -567,16 +567,14 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 			cksum = (cksum & 0xffff) + (cksum >> 16);
 			icmp_h->icmp_cksum = ~cksum;
 		} else if (proto == IPPROTO_UDP) {
-			udp_port = udp_h->src_port;
-			udp_h->src_port = udp_h->dst_port;
-			udp_h->dst_port = udp_port;
-			udp_h->dst_port = rte_cpu_to_be_16(broadcast_udp_dst);
-			udp_h->dgram_cksum = 0;
-
 			flag_offset = rte_be_to_cpu_16(ip_h->fragment_offset);
 			ip_ofs = (uint16_t)(flag_offset & IPV4_HDR_OFFSET_MASK);
-
 			if (ip_ofs == 0) {
+				udp_port = udp_h->src_port;
+				udp_h->src_port = udp_h->dst_port;
+				udp_h->dst_port = udp_port;
+				udp_h->dst_port = rte_cpu_to_be_16(broadcast_udp_dst);
+				udp_h->dgram_cksum = 0;
 				*(int*)((char *)udp_h + sizeof(struct udp_hdr)) = counter++;
 			}
 		}
