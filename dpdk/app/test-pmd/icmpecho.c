@@ -61,7 +61,6 @@
 #include <rte_ip.h>
 #include <rte_icmp.h>
 #include <rte_udp.h>
-#include <rte_ip_frag.h>
 #include <rte_string_fns.h>
 #include <rte_flow.h>
 
@@ -331,6 +330,8 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 	uint16_t arp_op;
 	uint16_t arp_pro;
 	uint16_t udp_port;
+	uint16_t flag_offset;
+	uint16_t ip_ofs;
 	uint32_t cksum;
 	uint8_t  i;
 	int l2_len;
@@ -572,10 +573,12 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 			udp_h->dst_port = rte_cpu_to_be_16(broadcast_udp_dst);
 			udp_h->dgram_cksum = 0;
 
-			if (rte_ipv4_frag_pkt_is_fragmented(ip_h)) {
-				/* code */
+			flag_offset = rte_be_to_cpu_16(ip_h->fragment_offset);
+			ip_ofs = (uint16_t)(flag_offset & IPV4_HDR_OFFSET_MASK);
+
+			if (ip_ofs == 0) {
+				*(int*)((char *)udp_h + sizeof(struct udp_hdr)) = counter++;
 			}
-			counter++;
 		}
 		pkts_burst[nb_replies++] = pkt;
 	}
