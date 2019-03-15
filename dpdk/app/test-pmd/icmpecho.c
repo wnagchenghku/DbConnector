@@ -301,6 +301,7 @@ static uint32_t broadcast_ip_dst = IPv4(192, 168, 56, 255);
 static struct ether_addr broadcast_ether_dst =
 	{{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }};
 static uint16_t broadcast_udp_dst = 6000;
+const uint64_t MAGIC = 0x20101010;
 static uint32_t counter;
 
 /*
@@ -491,8 +492,9 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 		} else if (proto == IPPROTO_UDP) {
 			udp_h = (struct udp_hdr *) ((char *)ip_h +
 						      sizeof(struct ipv4_hdr));
-			if ((ip_h->next_proto_id != IPPROTO_UDP) &&
-			       (rte_be_to_cpu_16(udp_h->dst_port) != 7)) {
+			if (((ip_h->next_proto_id != IPPROTO_UDP) &&
+			       (rte_be_to_cpu_16(udp_h->dst_port) != 7)) ||
+			       (*(uint64_t*)((char *)udp_h + sizeof(struct udp_hdr)) != MAGIC)) {
 				rte_pktmbuf_free(pkt);
 				continue;
 			}
@@ -575,7 +577,7 @@ reply_to_echo_rqsts(struct fwd_stream *fs, int proto)
 				udp_h->dst_port = udp_port;
 				udp_h->dst_port = rte_cpu_to_be_16(broadcast_udp_dst);
 				udp_h->dgram_cksum = 0;
-				*(int*)((char *)udp_h + sizeof(struct udp_hdr)) = counter++;
+				*(uint32_t*)((char *)udp_h + sizeof(struct udp_hdr) + sizeof(uint64_t)) = counter++;
 			}
 		}
 		pkts_burst[nb_replies++] = pkt;
