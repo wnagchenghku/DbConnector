@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     broadcastIP = argv[1];            /* First arg:  broadcast IP address */ 
     broadcastPort = atoi(argv[2]);    /* Second arg:  broadcast port */
     sendString = malloc(sendStringLen);
-    *(uint64_t*)(sendString) = MAGIC;
+    *(uint32_t*)(sendString) = MAGIC;
 
     /* Create socket for sending/receiving datagrams */
     if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)

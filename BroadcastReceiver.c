@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     if ((recvStringLen = recvfrom(sock, buf, MAXRECVSTRING, 0, NULL, 0)) < 0)
         DieWithError("recvfrom() failed");
 
-    printf("sequence num is %d\n", *(int*)((char*)buf + recvStringLen - sizeof(uint32_t))); // seq num is 4 bytes
+    printf("sequence num is %"PRIu32"\n", *(uint32_t*)((char*)buf + sizeof(uint32_t)));
     free(buf);
 
     close(sock);
