@@ -13,3 +13,9 @@ How to run dpdk-sequencer:
 12. choose 25. Enter f.
 13. Enter `set fwd udpecho` 
 14. Enter `start`
+
+To clear the sequence number.
+1. Enter `quit`
+2. choose 25. Enter f.
+3. Enter `set fwd udpecho` 
+4. Enter `start`
