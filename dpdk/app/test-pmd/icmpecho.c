@@ -298,6 +298,7 @@ ipv4_hdr_cksum(struct ipv4_hdr *ip_h)
 	(((rte_be_to_cpu_32((ipv4_addr)) >> 24) & 0x000000FF) == 0xE0)
 
 static uint32_t broadcast_ip_dst = IPv4(202, 45, 128, 255);
+// static uint32_t broadcast_ip_dst = IPv4(10, 22, 1, 255);
 static struct ether_addr broadcast_ether_dst =
 	{{ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }};
 static uint16_t broadcast_udp_dst = 6000;
