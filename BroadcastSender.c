@@ -19,9 +19,9 @@ int main(int argc, char *argv[])
     int broadcastPermission;          /* Socket opt to set permission to broadcast */
     unsigned int sendStringLen = 1024;/* Length of string to broadcast */
 
-    if (argc < 4)                     /* Test for correct number of parameters */
+    if (argc < 3)                     /* Test for correct number of parameters */
     {
-        fprintf(stderr,"Usage:  %s <IP Address> <Port> <Send String>\n", argv[0]);
+        fprintf(stderr,"Usage:  %s <IP Address> <Port>\n", argv[0]);
         exit(1);
     }
 

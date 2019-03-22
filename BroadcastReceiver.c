@@ -4,6 +4,7 @@
 #include <stdlib.h>     /* for atoi() and exit() */
 #include <string.h>     /* for memset() */
 #include <unistd.h>     /* for close() */
+#include <inttypes.h>
 
 #define MAXRECVSTRING 255  /* Longest string to receive */
 
