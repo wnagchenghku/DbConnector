@@ -31,3 +31,5 @@ How to run dpdk-sequencer with Mellanox:
 8. back to the original terminal and choose 25. Enter f.
 9. Enter `set fwd udpecho` 
 10. Enter `start`
+
+The source code of sequencer is in dpdk/app/test-pmd/icmpecho.c
