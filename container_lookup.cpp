@@ -3,24 +3,33 @@
 #include <iostream>
 #include <unordered_set>
 #include <inttypes.h>
- 
+#define BILLION 1000000000L
+
 int main()
 {  
     std::unordered_set<uint64_t> set;
-    uint64_t size = 100000;
-    for (uint64_t i = 0; i < size; i++)
-        set.insert(i);
-    
-    struct timespec start, stop;
-    int randNum;
-    long ns = 0;
-
-    for (uint64_t i = 0; i < size; ++i) {
-    	randNum = rand()%(size + 1);
-    	clock_gettime(CLOCK_REALTIME, &start);
-    	set.find(randNum);
-    	clock_gettime(CLOCK_REALTIME, &stop);
-    	ns += stop.tv_nsec - start.tv_nsec;
+    int numKeys = 500000;
+    uint64_t keys[numKeys];
+    for (int i = 0; i < numKeys; i++) {
+        keys[i] = rand();
+        set.insert(keys[i]);
     }
-    printf( "%" PRIu64 " elements, lookup takes %ld nanoseconds\n", size, ns / size);
+    
+    struct timespec start, end;
+    int count = 100;
+    uint64_t sum = 0;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    for (int i = 0; i < count; i++) {
+        for (int j = 0; j < numKeys; j++) {
+            if (set.find(keys[j]) != set.end()) {
+                sum++;
+            }
+        }
+    }
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    uint64_t diff;
+    diff = BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
+
+    printf( "%d elements, lookup takes %ld nanoseconds\n", numKeys, diff / (count * numKeys));
 }
