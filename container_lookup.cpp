@@ -31,5 +31,5 @@ int main()
     uint64_t diff;
     diff = BILLION * (end.tv_sec - start.tv_sec) + end.tv_nsec - start.tv_nsec;
 
-    printf( "%d elements, lookup takes %ld nanoseconds\n", numKeys, diff / (count * numKeys));
+    printf("sum is %" PRIu64 ", %d elements, lookup takes %ld nanoseconds\n", sum, numKeys, diff / (count * numKeys));
 }
